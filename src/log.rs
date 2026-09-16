@@ -1,6 +1,7 @@
 use crate::error::{Error, Result};
 use chrono::{Local, Utc};
 use std::{
+    borrow::Cow,
     cell::RefCell,
     collections::hash_map::{Entry, HashMap},
     ffi::OsString,
@@ -8,7 +9,6 @@ use std::{
     fs::{File, OpenOptions},
     io::Write,
     path::Path,
-    borrow::Cow,
 };
 
 thread_local! {
