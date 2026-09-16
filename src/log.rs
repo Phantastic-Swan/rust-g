@@ -16,12 +16,12 @@ thread_local! {
 }
 
 byond_fn!(fn log_write(path, data, ...rest) {
-    write_log(path, data, true, rest);
+    write_log(path, data, true, rest)
 });
 
 // same as the one above, except writes the timestamp in local time
 byond_fn!(fn log_write_local_time(path, data, ...rest) {
-    write_log(path, data, false, rest);
+    write_log(path, data, false, rest)
 });
 
 fn write_log(path: &str, data: &str, utc_time: bool, rest: &[Cow<'_, str>]) -> Option<Error>
