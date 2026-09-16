@@ -25,42 +25,40 @@ byond_fn!(fn log_write_local_time(path, data, ...rest) {
     write_log(path, data, false, rest)
 });
 
-fn write_log(path: &str, data: &str, utc_time: bool, rest: &[Cow<'_, str>]) -> Option<Error>
-{
-    FILE_MAP.with(|cell| -> Result<()> {
-        // open file
-        let mut map = cell.borrow_mut();
-        let path = Path::new(path as &str);
-        let file = match map.entry(path.into()) {
-            Entry::Occupied(elem) => elem.into_mut(),
-            Entry::Vacant(elem) => elem.insert(open(path)?),
-        };
+fn write_log(path: &str, data: &str, utc_time: bool, rest: &[Cow<'_, str>]) -> Option<Error> {
+    FILE_MAP
+        .with(|cell| -> Result<()> {
+            // open file
+            let mut map = cell.borrow_mut();
+            let path = Path::new(path as &str);
+            let file = match map.entry(path.into()) {
+                Entry::Occupied(elem) => elem.into_mut(),
+                Entry::Vacant(elem) => elem.insert(open(path)?),
+            };
 
-        if rest.first().map(|x| &**x) == Some("false") {
-            // Write the data to the file with no accoutrements.
-            write!(file, "{data}")?;
-        } else {
-            // write first line, timestamped
-            let mut iter = data.split('\n');
-            if let Some(line) = iter.next() {
-                if utc_time
-                {
-                    writeln!(file, "[{}] {}", Utc::now().format("%F %T%.3f"), line)?;
+            if rest.first().map(|x| &**x) == Some("false") {
+                // Write the data to the file with no accoutrements.
+                write!(file, "{data}")?;
+            } else {
+                // write first line, timestamped
+                let mut iter = data.split('\n');
+                if let Some(line) = iter.next() {
+                    if utc_time {
+                        writeln!(file, "[{}] {}", Utc::now().format("%F %T%.3f"), line)?;
+                    } else {
+                        writeln!(file, "[{}] {}", Local::now().format("%F %T%.3f"), line)?;
+                    }
                 }
-                else
-                {
-                    writeln!(file, "[{}] {}", Local::now().format("%F %T%.3f"), line)?;
+
+                // write remaining lines
+                for line in iter {
+                    writeln!(file, " - {line}")?;
                 }
             }
 
-            // write remaining lines
-            for line in iter {
-                writeln!(file, " - {line}")?;
-            }
-        }
-
-        Ok(())
-    }).err()
+            Ok(())
+        })
+        .err()
 }
 
 byond_fn!(
