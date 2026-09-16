@@ -1,5 +1,5 @@
-use crate::error::Result;
-use chrono::Local;
+use crate::error::{Error, Result};
+use chrono::{Local, Utc};
 use std::{
     cell::RefCell,
     collections::hash_map::{Entry, HashMap},
@@ -8,6 +8,7 @@ use std::{
     fs::{File, OpenOptions},
     io::Write,
     path::Path,
+    borrow::Cow,
 };
 
 thread_local! {
@@ -15,6 +16,16 @@ thread_local! {
 }
 
 byond_fn!(fn log_write(path, data, ...rest) {
+    write_log(path, data, true, rest);
+});
+
+// same as the one above, except writes the timestamp in local time
+byond_fn!(fn log_write_local_time(path, data, ...rest) {
+    write_log(path, data, false, rest);
+});
+
+fn write_log(path: &str, data: &str, utc_time: bool, rest: &[Cow<'_, str>]) -> Option<Error>
+{
     FILE_MAP.with(|cell| -> Result<()> {
         // open file
         let mut map = cell.borrow_mut();
@@ -31,7 +42,14 @@ byond_fn!(fn log_write(path, data, ...rest) {
             // write first line, timestamped
             let mut iter = data.split('\n');
             if let Some(line) = iter.next() {
-                writeln!(file, "[{}] {}", Local::now().format("%F %T%.3f"), line)?;
+                if utc_time
+                {
+                    writeln!(file, "[{}] {}", Utc::now().format("%F %T%.3f"), line)?;
+                }
+                else
+                {
+                    writeln!(file, "[{}] {}", Local::now().format("%F %T%.3f"), line)?;
+                }
             }
 
             // write remaining lines
@@ -42,7 +60,7 @@ byond_fn!(fn log_write(path, data, ...rest) {
 
         Ok(())
     }).err()
-});
+}
 
 byond_fn!(
     fn log_close_all() {
