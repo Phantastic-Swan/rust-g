@@ -15,11 +15,12 @@ thread_local! {
     static FILE_MAP: RefCell<HashMap<OsString, File>> = RefCell::new(HashMap::new());
 }
 
+// writes the log to a file, with a timestamp in the UTC timezone
 byond_fn!(fn log_write(path, data, ...rest) {
     write_log(path, data, true, rest)
 });
 
-// same as the one above, except writes the timestamp in local time
+// writes the log to a file, with a timestamp in the local timezone
 byond_fn!(fn log_write_local_time(path, data, ...rest) {
     write_log(path, data, false, rest)
 });
