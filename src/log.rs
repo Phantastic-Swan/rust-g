@@ -21,7 +21,12 @@ byond_fn!(fn log_write(path, data, timezone, ...rest) {
     write_log(path, data, timezone, rest)
 });
 
-fn write_log(path: &str, data: &str, timezone_string: &str, rest: &[Cow<'_, str>]) -> Option<Error> {
+fn write_log(
+    path: &str,
+    data: &str,
+    timezone_string: &str,
+    rest: &[Cow<'_, str>],
+) -> Option<Error> {
     FILE_MAP
         .with(|cell| -> Result<()> {
             // open file
@@ -42,7 +47,8 @@ fn write_log(path: &str, data: &str, timezone_string: &str, rest: &[Cow<'_, str>
                     if timezone_string == "Local" {
                         writeln!(file, "[{}] {}", Local::now().format("%F %T%.3f"), line)?;
                     } else {
-                        let timezone = chrono_tz::Tz::from_str(timezone_string).unwrap_or(chrono_tz::UTC);
+                        let timezone =
+                            chrono_tz::Tz::from_str(timezone_string).unwrap_or(chrono_tz::UTC);
                         let timestamp = Utc::now().with_timezone(&timezone);
                         writeln!(file, "[{}] {}", timestamp.format("%F %T%.3f"), line)?;
                     }
