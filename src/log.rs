@@ -9,6 +9,7 @@ use std::{
     fs::{File, OpenOptions},
     io::Write,
     path::Path,
+    str::FromStr,
 };
 
 thread_local! {
@@ -16,16 +17,11 @@ thread_local! {
 }
 
 // writes the log to a file, with a timestamp in the UTC timezone
-byond_fn!(fn log_write(path, data, ...rest) {
-    write_log(path, data, true, rest)
+byond_fn!(fn log_write(path, data, timezone, ...rest) {
+    write_log(path, data, timezone, rest)
 });
 
-// writes the log to a file, with a timestamp in the local timezone
-byond_fn!(fn log_write_local_time(path, data, ...rest) {
-    write_log(path, data, false, rest)
-});
-
-fn write_log(path: &str, data: &str, utc_time: bool, rest: &[Cow<'_, str>]) -> Option<Error> {
+fn write_log(path: &str, data: &str, timezone_string: &str, rest: &[Cow<'_, str>]) -> Option<Error> {
     FILE_MAP
         .with(|cell| -> Result<()> {
             // open file
@@ -43,10 +39,12 @@ fn write_log(path: &str, data: &str, utc_time: bool, rest: &[Cow<'_, str>]) -> O
                 // write first line, timestamped
                 let mut iter = data.split('\n');
                 if let Some(line) = iter.next() {
-                    if utc_time {
-                        writeln!(file, "[{}] {}", Utc::now().format("%F %T%.3f"), line)?;
-                    } else {
+                    if timezone_string == "Local" {
                         writeln!(file, "[{}] {}", Local::now().format("%F %T%.3f"), line)?;
+                    } else {
+                        let timezone = chrono_tz::Tz::from_str(timezone_string).unwrap_or(chrono_tz::UTC);
+                        let timestamp = Utc::now().with_timezone(&timezone);
+                        writeln!(file, "[{}] {}", timestamp.format("%F %T%.3f"), line)?;
                     }
                 }
 
