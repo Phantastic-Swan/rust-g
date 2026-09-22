@@ -17,14 +17,13 @@ thread_local! {
 }
 
 // writes the log to a file, with a timestamp in the UTC timezone
-byond_fn!(fn log_write(path, data, timezone, ...rest) {
-    write_log(path, data, timezone, rest)
+byond_fn!(fn log_write(path, data, ...rest) {
+    write_log(path, data, rest)
 });
 
 fn write_log(
     path: &str,
     data: &str,
-    timezone_string: &str,
     rest: &[Cow<'_, str>],
 ) -> Option<Error> {
     FILE_MAP
@@ -43,6 +42,7 @@ fn write_log(
             } else {
                 // write first line, timestamped
                 let mut iter = data.split('\n');
+                let timezone_string = rest.last().map(|x| &**x).unwrap_or("UTC");
                 if let Some(line) = iter.next() {
                     if timezone_string == "Local" {
                         writeln!(file, "[{}] {}", Local::now().format("%F %T%.3f"), line)?;
