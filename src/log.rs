@@ -21,11 +21,7 @@ byond_fn!(fn log_write(path, data, ...rest) {
     write_log(path, data, rest)
 });
 
-fn write_log(
-    path: &str,
-    data: &str,
-    rest: &[Cow<'_, str>],
-) -> Option<Error> {
+fn write_log(path: &str, data: &str, rest: &[Cow<'_, str>]) -> Option<Error> {
     FILE_MAP
         .with(|cell| -> Result<()> {
             // open file
